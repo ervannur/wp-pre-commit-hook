@@ -39,14 +39,20 @@ fi
 echo "Checking Code Standard Compliance, using $RULESET as ruleset standard..."
 for FILE in $SFILES
 do
+    echo "Running Code Sniffer for $PROJECT/$FILE"
     ./vendor/bin/phpcs --standard="$RULESET" --colors --encoding=utf-8 -n -p "$PROJECT/$FILE"
     if [ $? != 0 ]
     then
-        echo "Fix the error before commit."
-        echo "Run"
-        echo "  ./vendor/bin/phpcbf --standard=\"$RULESET\" $FILES"
-        echo "for automatic fix or fix it manually."
-        exit 1
+        echo "Coding standards errors have been detected. Running phpcbf..."
+        ./vendor/bin/phpcbf --standard="$RULESET" --encoding=utf-8 -n -p "$PROJECT/$FILE"
+        git add "$PROJECT/$FILE"
+        echo "Running Code Sniffer again..."
+        ./vendor/bin/phpcs --standard="$RULESET" --encoding=utf-8 -n -p "$PROJECT/$FILE"
+        if [ $? != 0 ]
+        then
+            echo "Errors found not fixable automatically"
+            exit 1
+        fi
     fi
 done
 
